@@ -139,7 +139,6 @@ footer { text-align:center; padding:14px; font-size:0.68em; color:#3a5a7a; borde
   <button class="tab active" id="tabRanking" onclick="showTab('ranking')">🏅 FIFA Ranking</button>
   <button class="tab"        id="tabGroups"  onclick="showTab('groups')">📊 Groepen</button>
   <button class="tab"        id="tabKnockout" onclick="showTab('knockout')">🏆 Knockout</button>
-  <button class="tab"        id="tabFull"    onclick="showTab('full')">🌍 Volledige Ranking</button>
 </div>
 
 <div class="filter-bar" id="filterBar" style="display:none">
@@ -433,10 +432,10 @@ function getLive(name) { return LIVE[name] || null; }
 // ── Tabs ──────────────────────────────────────────────────────────────────
 function showTab(tab) {
   currentTab = tab;
-  ['Ranking','Groups','Knockout','Full'].forEach(t => {
+  ['Ranking','Groups','Knockout'].forEach(t => {
     document.getElementById('tab'+t).classList.toggle('active', t.toLowerCase()===tab);
   });
-  document.getElementById('filterBar').style.display = tab==='full' ? 'flex' : 'none';
+  document.getElementById('filterBar').style.display = tab==='ranking' ? 'flex' : 'none';
   render();
 }
 function filterConf(conf, btn) {
@@ -469,11 +468,9 @@ function render() {
   if (currentTab==='groups')  { el.innerHTML = renderGroups();  return; }
   if (currentTab==='knockout') { el.innerHTML = renderKnockout(); return; }
 
-  let rows = currentTab==='full'
-    ? TEAMS.filter(r => currentConf==='ALL' || r.conf===currentConf)
-    : TEAMS;
+  let rows = TEAMS.filter(r => currentConf==='ALL' || r.conf===currentConf);
   rows = sorted(rows);
-  const showLive = currentTab==='ranking';
+  const showLive = true;
 
   let h = `<table><thead><tr>
     <th onclick="sortBy('rank')"    class="${sc('rank')}">Rank</th>
@@ -612,6 +609,8 @@ function closeModal() {
 
 // Load on startup
 loadStandings();
+// Show filter bar on initial ranking tab
+document.getElementById('filterBar').style.display = 'flex';
 render();
 </script>
   </div>
