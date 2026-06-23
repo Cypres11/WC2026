@@ -5,7 +5,8 @@ Flask backend voor Railway deployment - v4.1 met admin invoer
 """
 
 from flask import Flask, jsonify, request, redirect, session, render_template_string
-import json, os
+import json
+import os, os
 from datetime import datetime
 
 app = Flask(__name__)
@@ -158,10 +159,35 @@ DEFAULT_MATCHES = [
     {"id":"L6","home":"Croatia","away":"Ghana","hs":None,"as":None},
 ]
 
-# Initialiseer cache met default matches
-_cache["data"]       = compute_standings(DEFAULT_MATCHES)
-_cache["updated_at"] = "18 jun 2026 (matchday 1)"
-_cache["matches"]    = DEFAULT_MATCHES
+# ── Persistent storage ──────────────────────────────────────────────────────
+SCORES_FILE = os.path.join(os.path.dirname(__file__), 'scores.json')
+
+def load_scores():
+    """Laad scores van schijf, of gebruik defaults als bestand niet bestaat."""
+    if os.path.exists(SCORES_FILE):
+        try:
+            with open(SCORES_FILE, 'r') as f:
+                data = json.load(f)
+                print(f"Scores geladen van {SCORES_FILE}: {len(data.get('matches',[]))} wedstrijden")
+                return data.get('matches', DEFAULT_MATCHES), data.get('updated_at', None)
+        except Exception as e:
+            print(f"Fout bij laden scores: {e} — gebruik defaults")
+    return DEFAULT_MATCHES, "18 jun 2026 (matchday 1)"
+
+def save_scores(matches, updated_at):
+    """Sla scores op naar schijf."""
+    try:
+        with open(SCORES_FILE, 'w') as f:
+            json.dump({'matches': matches, 'updated_at': updated_at}, f)
+        print(f"Scores opgeslagen naar {SCORES_FILE}")
+    except Exception as e:
+        print(f"Fout bij opslaan scores: {e}")
+
+# Initialiseer cache — laad van schijf of gebruik defaults
+_matches, _updated_at = load_scores()
+_cache["matches"]    = _matches
+_cache["data"]       = compute_standings(_matches)
+_cache["updated_at"] = _updated_at
 
 # ── Routes ──────────────────────────────────────────────────────────────────
 
@@ -203,6 +229,7 @@ def admin():
         _cache["matches"]    = matches
         _cache["data"]       = compute_standings(matches)
         _cache["updated_at"] = datetime.now().strftime("%d %b %Y %H:%M UTC")
+        save_scores(matches, _cache["updated_at"])
         return redirect("/admin?saved=1")
 
     matches  = _cache.get("matches", DEFAULT_MATCHES)
