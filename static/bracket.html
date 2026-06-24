@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WC 2026 – FIFA Rankings</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #0d1b2a; color: #e0e0e0; min-height: 100vh; }
+
+header {
+  background: linear-gradient(135deg, #1a3a5c, #0d2137);
+  padding: 14px 16px; border-bottom: 2px solid #c9a84c;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px;
+}
+header h1 { font-size: 1.2em; color: #c9a84c; }
+header .subtitle { font-size: 0.72em; color: #8aaec8; margin-top: 2px; }
+.stamp { font-size: 0.75em; color: #4caf7d; background: #0d2137; border: 1px solid #4caf7d; border-radius: 6px; padding: 5px 10px; }
+
+.tab-bar {
+  display: flex; gap: 4px; padding: 10px 16px 0;
+  background: #111f2e; border-bottom: 2px solid #1a2e42; flex-wrap: wrap;
+}
+.tab {
+  background: #1a2e42; border: 1px solid #2a4a6a; color: #8aaec8;
+  border-radius: 6px 6px 0 0; padding: 6px 14px; font-size: 0.8em;
+  cursor: pointer; font-family: Arial, sans-serif; margin-bottom: -2px;
+  border-bottom: 2px solid #1a2e42;
+}
+.tab.active { background: #0d1b2a; border-color: #c9a84c; border-bottom-color: #0d1b2a; color: #c9a84c; font-weight: bold; }
+
+.filter-bar {
+  padding: 8px 16px; display: flex; gap: 6px; flex-wrap: wrap;
+  background: #0d1b2a; border-bottom: 1px solid #1a2e42;
+}
+.conf-btn {
+  background: #1a2e42; border: 1px solid #2a4a6a; color: #8aaec8;
+  border-radius: 20px; padding: 3px 10px; font-size: 0.72em;
+  cursor: pointer; font-family: Arial, sans-serif;
+}
+.conf-btn.active { border-color: #c9a84c; color: #c9a84c; }
+
+.content { padding: 14px; overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+thead th {
+  background: #1a3a5c; color: #c9a84c; padding: 9px 7px;
+  text-align: left; font-size: 0.78em; border-bottom: 2px solid #c9a84c;
+  white-space: nowrap; cursor: pointer; user-select: none;
+}
+thead th:hover { background: #1f4570; }
+thead th.sa::after { content:" ↑"; color:#fff; }
+thead th.sd::after { content:" ↓"; color:#fff; }
+tbody tr { border-bottom: 1px solid #1a2e42; }
+tbody tr:hover { background: #1a2e42; }
+tbody td { padding: 7px 7px; vertical-align: middle; }
+
+.rb { display:inline-block; background:#1a3a5c; border:1px solid #2a4a6a; border-radius:4px; padding:2px 5px; font-weight:bold; font-size:0.88em; min-width:28px; text-align:center; }
+.rb.t3 { border-color:#c9a84c; color:#c9a84c; }
+.rb.t10 { border-color:#8aaec8; color:#8aaec8; }
+.pts-cell { font-weight:bold; color:#4caf7d; }
+.cb { display:inline-block; border-radius:4px; padding:2px 6px; font-size:0.72em; font-weight:bold; color:#0d1b2a; }
+.UEFA{background:#5b9bd5;} .CONMEBOL{background:#f0c84a;} .CONCACAF{background:#4caf7d;}
+.CAF{background:#e07b3a;} .AFC{background:#b07fd4;} .OFC{background:#5bbf7a;}
+.gb { display:inline-block; background:#0d2137; border:1px solid #2a4a6a; border-radius:4px; padding:1px 5px; font-size:0.78em; font-weight:bold; color:#8aaec8; }
+.lc { font-size:0.75em; color:#8aaec8; }
+.lc b { color:#c9a84c; }
+
+/* Groups grid */
+.groups-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(270px, 1fr)); gap:14px; }
+.group-card { background:#111f2e; border:1px solid #1a2e42; border-radius:8px; overflow:hidden; }
+.group-card h3 { background:#1a3a5c; color:#c9a84c; padding:7px 12px; font-size:0.85em; letter-spacing:1px; border-bottom:1px solid #c9a84c; }
+.group-card table { font-size:0.78em; }
+.group-card thead th { background:#1a2e42; color:#8aaec8; font-size:0.7em; padding:5px 6px; border-bottom:1px solid #2a4a6a; cursor:default; }
+.group-card thead th:hover { background:#1a2e42; }
+.group-card tbody td { padding:5px 6px; }
+.group-card tbody tr:first-child td { color:#fff; font-weight:bold; }
+.group-card tbody tr:nth-child(2) td { color:#c8e0f0; }
+.adv { width:3px; background:#4caf7d; }
+.adv2 { width:3px; background:#8aaec8; }
+
+footer { text-align:center; padding:14px; font-size:0.68em; color:#3a5a7a; border-top:1px solid #1a2e42; margin-top:10px; }
+
+/* ── Knockout bracket ── */
+.knockout-wrap { padding: 14px; overflow-x: auto; }
+.ko-stage { margin-bottom: 28px; }
+.ko-stage h3 {
+  color: #c9a84c; font-size: 0.9em; letter-spacing: 1px;
+  border-bottom: 1px solid #c9a84c; padding-bottom: 6px; margin-bottom: 12px;
+}
+.ko-matches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.ko-match {
+  background: #111f2e; border: 1px solid #1a2e42; border-radius: 8px;
+  overflow: hidden; font-size: 0.82em;
+}
+.ko-match .match-header {
+  background: #1a2e42; padding: 4px 10px; font-size: 0.7em;
+  color: #8aaec8; display: flex; justify-content: space-between;
+}
+.ko-team {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-bottom: 1px solid #0d1b2a;
+}
+.ko-team:last-child { border-bottom: none; }
+.ko-team.winner { background: #0d2137; }
+.ko-team .tname { color: #e0e0e0; flex: 1; }
+.ko-team .tname.tbd { color: #3a5a7a; font-style: italic; }
+.ko-team .tscore {
+  font-weight: bold; color: #c9a84c; min-width: 20px; text-align: right;
+}
+.ko-team .conf-dot {
+  width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; flex-shrink: 0;
+}
+.UEFA-dot{background:#5b9bd5;} .CONMEBOL-dot{background:#f0c84a;}
+.CONCACAF-dot{background:#4caf7d;} .CAF-dot{background:#e07b3a;}
+.AFC-dot{background:#b07fd4;} .OFC-dot{background:#5bbf7a;}
+.ko-note { font-size:0.68em; color:#3a5a7a; margin-top:10px; text-align:center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⚽ WC 2026 – FIFA Rankings</h1>
+    <div class="subtitle">FIFA ranking jun 2026 · Live WK-stand · Powered by Claude AI · RFB Consult</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <span id="stampTs" class="stamp">⏳ Stand laden...</span>
+      <a href="/admin" class="btn" style="border-color:#4caf7d;color:#4caf7d;text-decoration:none">⚙ Admin</a>
+    </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab active" id="tabRanking" onclick="showTab('ranking')">🏅 FIFA Ranking</button>
+  <a class="tab" href="/bracket" style="text-decoration:none">🏆 Bracket</a>
+  <button class="tab"        id="tabGroups"  onclick="showTab('groups')">📊 Groepen</button>
+  <button class="tab"        id="tabKnockout" onclick="showTab('knockout')">🏆 Knockout</button>
+</div>
+
+<div class="filter-bar" id="filterBar" style="display:none">
+  <span style="font-size:0.72em;color:#8aaec8;align-self:center">Conf:</span>
+  <button class="conf-btn active" onclick="filterConf('ALL',this)">Alle</button>
+  <button class="conf-btn" onclick="filterConf('UEFA',this)">UEFA</button>
+  <button class="conf-btn" onclick="filterConf('CONMEBOL',this)">CONMEBOL</button>
+  <button class="conf-btn" onclick="filterConf('CONCACAF',this)">CONCACAF</button>
+  <button class="conf-btn" onclick="filterConf('CAF',this)">CAF</button>
+  <button class="conf-btn" onclick="filterConf('AFC',this)">AFC</button>
+  <button class="conf-btn" onclick="filterConf('OFC',this)">OFC</button>
+</div>
+
+<div class="content" id="mainContent"></div>
+
+<footer>FIFA ranking: officieel jun 2026 · Live WK-stand via Claude AI · Persoonlijk gebruik · RFB Consult v3.1</footer>
+
+<script>
+// ── 48 WC teams (official FIFA draw Dec 2025) ─────────────────────────────
+const TEAMS = [
+  {rank:1,  name:"Argentina",             group:"J", conf:"CONMEBOL", fifaPts:1877.00},
+  {rank:2,  name:"Spain",                 group:"H", conf:"UEFA",     fifaPts:1876.00},
+  {rank:3,  name:"France",                group:"I", conf:"UEFA",     fifaPts:1869.00},
+  {rank:4,  name:"England",               group:"L", conf:"UEFA",     fifaPts:1826.00},
+  {rank:5,  name:"Portugal",              group:"K", conf:"UEFA",     fifaPts:1764.00},
+  {rank:6,  name:"Brazil",                group:"C", conf:"CONMEBOL", fifaPts:1761.00},
+  {rank:7,  name:"Netherlands",           group:"F", conf:"UEFA",     fifaPts:1758.00},
+  {rank:8,  name:"Morocco",               group:"C", conf:"CAF",      fifaPts:1756.00},
+  {rank:9,  name:"Belgium",               group:"G", conf:"UEFA",     fifaPts:1735.00},
+  {rank:10, name:"Germany",               group:"E", conf:"UEFA",     fifaPts:1730.00},
+  {rank:11, name:"Croatia",               group:"L", conf:"UEFA",     fifaPts:1717.00},
+  {rank:12, name:"Colombia",              group:"K", conf:"CONMEBOL", fifaPts:1693.00},
+  {rank:13, name:"Senegal",               group:"I", conf:"CAF",      fifaPts:1689.00},
+  {rank:14, name:"Mexico",                group:"A", conf:"CONCACAF", fifaPts:1681.00},
+  {rank:15, name:"United States",         group:"D", conf:"CONCACAF", fifaPts:1669.00},
+  {rank:16, name:"Uruguay",               group:"H", conf:"CONMEBOL", fifaPts:1660.00},
+  {rank:17, name:"Japan",                 group:"F", conf:"AFC",      fifaPts:1648.00},
+  {rank:18, name:"Switzerland",           group:"B", conf:"UEFA",     fifaPts:1635.00},
+  {rank:19, name:"Iran",                  group:"G", conf:"AFC",      fifaPts:1602.00},
+  {rank:20, name:"Austria",               group:"J", conf:"UEFA",     fifaPts:1598.00},
+  {rank:21, name:"Ecuador",               group:"E", conf:"CONMEBOL", fifaPts:1591.00},
+  {rank:22, name:"South Korea",           group:"A", conf:"AFC",      fifaPts:1586.00},
+  {rank:23, name:"Australia",             group:"D", conf:"AFC",      fifaPts:1578.00},
+  {rank:24, name:"Egypt",                 group:"G", conf:"CAF",      fifaPts:1559.00},
+  {rank:25, name:"Canada",                group:"B", conf:"CONCACAF", fifaPts:1552.00},
+  {rank:26, name:"Ivory Coast",           group:"E", conf:"CAF",      fifaPts:1530.00},
+  {rank:27, name:"Qatar",                 group:"B", conf:"AFC",      fifaPts:1518.00},
+  {rank:28, name:"Algeria",               group:"J", conf:"CAF",      fifaPts:1514.00},
+  {rank:29, name:"Sweden",                group:"F", conf:"UEFA",     fifaPts:1497.00},
+  {rank:30, name:"Tunisia",               group:"F", conf:"CAF",      fifaPts:1493.00},
+  {rank:31, name:"Czechia",               group:"A", conf:"UEFA",     fifaPts:1488.00},
+  {rank:32, name:"Türkiye",               group:"D", conf:"UEFA",     fifaPts:1483.00},
+  {rank:33, name:"Norway",                group:"I", conf:"UEFA",     fifaPts:1471.00},
+  {rank:34, name:"Scotland",              group:"C", conf:"UEFA",     fifaPts:1452.00},
+  {rank:35, name:"DR Congo",              group:"K", conf:"CAF",      fifaPts:1424.00},
+  {rank:36, name:"Paraguay",              group:"D", conf:"CONMEBOL", fifaPts:1419.00},
+  {rank:37, name:"Saudi Arabia",          group:"H", conf:"AFC",      fifaPts:1408.00},
+  {rank:38, name:"Ghana",                 group:"L", conf:"CAF",      fifaPts:1402.00},
+  {rank:39, name:"New Zealand",           group:"G", conf:"OFC",      fifaPts:1391.00},
+  {rank:40, name:"Bosnia and Herzegovina",group:"B", conf:"UEFA",     fifaPts:1385.00},
+  {rank:41, name:"Haiti",                 group:"C", conf:"CONCACAF", fifaPts:1361.00},
+  {rank:42, name:"Uzbekistan",            group:"K", conf:"AFC",      fifaPts:1338.00},
+  {rank:43, name:"Jordan",                group:"J", conf:"AFC",      fifaPts:1322.00},
+  {rank:44, name:"South Africa",          group:"A", conf:"CAF",      fifaPts:1314.00},
+  {rank:45, name:"Curaçao",               group:"E", conf:"CONCACAF", fifaPts:1293.00},
+  {rank:46, name:"Cape Verde",            group:"H", conf:"CAF",      fifaPts:1283.00},
+  {rank:47, name:"Iraq",                  group:"I", conf:"AFC",      fifaPts:1274.00},
+  {rank:48, name:"Panama",                group:"L", conf:"CONCACAF", fifaPts:1247.00},
+];
+
+// ── WK Stand (18 jun 2026, dag 8 — matchday 1 compleet) ─────────────────
+// Alle dag 1 resultaten (11-17 jun):
+// A: MEX 2-0 RSA, KOR 2-1 CZE
+// B: CAN 1-1 BIH
+// C: BRA 1-1 MAR, SCO 1-0 HAI
+// D: USA 4-1 PAR
+// E: GER 7-1 CUW, IVC 1-0 ECU
+// F: NED 2-2 JPN, SWE 5-1 TUN
+// G: BEL 1-1 EGY, IRN 2-2 NZL
+// H: ESP 0-0 CPV, KSA 1-1 URU
+// I: FRA 2-0 SEN, NOR 1-0 IRQ (16 jun)
+// J: ARG 3-0 ALG, AUT 3-1 JOR (16-17 jun)
+// K: POR 1-1 COD, COL 3-1 UZB (17 jun)
+// L: ENG 4-2 CRO, GHA 1-0 PAN (17 jun)
+// 18 jun: UZB 1-3 COL (al gespeeld); CZE-RSA en SUI-BIH later vandaag
+const LIVE = {
+  // Groep A — 2 gespeeld
+  "Mexico":                {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "South Korea":           {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Czechia":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "South Africa":          {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep B — 1 gespeeld
+  "Canada":                {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Bosnia and Herzegovina":{p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Switzerland":           {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Qatar":                 {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep C — 2 gespeeld
+  "Scotland":              {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Brazil":                {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Morocco":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Haiti":                 {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep D — 1 gespeeld
+  "United States":         {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Paraguay":              {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Australia":             {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Türkiye":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep E — 2 gespeeld
+  "Germany":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Ivory Coast":           {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Ecuador":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Curaçao":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep F — 2 gespeeld
+  "Sweden":                {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Netherlands":           {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Japan":                 {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Tunisia":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep G — 2 gespeeld
+  "Belgium":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Egypt":                 {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Iran":                  {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "New Zealand":           {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep H — 2 gespeeld
+  "Spain":                 {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Cape Verde":            {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Saudi Arabia":          {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Uruguay":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep I — 2 gespeeld
+  "France":                {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Norway":                {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Senegal":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Iraq":                  {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep J — 2 gespeeld
+  "Argentina":             {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Austria":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Jordan":                {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Algeria":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep K — 2 gespeeld
+  "Colombia":              {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Portugal":              {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "DR Congo":              {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Uzbekistan":            {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  // Groep L — 2 gespeeld
+  "England":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Ghana":                 {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Croatia":               {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+  "Panama":                {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0},
+};
+
+
+// ── Official Round of 32 bracket (FIFA fixed draw) ────────────────────────
+// Source: FIFA official bracket published Dec 2025
+// Format: [matchId, home_slot, away_slot, date, venue, home_score, away_score, winner]
+// Slots: "1A"=winner group A, "2A"=runner-up A, "3X"=best 3rd place
+// Scores/winners filled in as tournament progresses
+
+const KO_STAGES = [
+  {
+    id: 'r32', label: 'Round of 32', dates: '28 jun – 3 jul',
+    matches: [
+      // Per FIFA official bracket
+      {id:73,  home:'1A', away:'2C', date:'28 jun', venue:'Dallas',           hs:null, as:null, w:null},
+      {id:74,  home:'1C', away:'2B', date:'28 jun', venue:'Los Angeles',      hs:null, as:null, w:null},
+      {id:75,  home:'1B', away:'3ACDJ', date:'29 jun', venue:'Kansas City',   hs:null, as:null, w:null},
+      {id:76,  home:'1D', away:'2A', date:'29 jun', venue:'Seattle',          hs:null, as:null, w:null},
+      {id:77,  home:'1E', away:'3BEFG', date:'29 jun', venue:'Philadelphia',  hs:null, as:null, w:null},
+      {id:78,  home:'1F', away:'2E', date:'30 jun', venue:'Atlanta',          hs:null, as:null, w:null},
+      {id:79,  home:'1G', away:'3CDIJ', date:'30 jun', venue:'Houston',       hs:null, as:null, w:null},
+      {id:80,  home:'1H', away:'2F', date:'30 jun', venue:'Miami',            hs:null, as:null, w:null},
+      {id:81,  home:'1I', away:'3ABFK', date:'1 jul', venue:'Boston',         hs:null, as:null, w:null},
+      {id:82,  home:'1J', away:'2H', date:'1 jul', venue:'Miami',             hs:null, as:null, w:null},
+      {id:83,  home:'1K', away:'3DEIJ', date:'2 jul', venue:'Kansas City',    hs:null, as:null, w:null},
+      {id:84,  home:'1L', away:'2I', date:'2 jul', venue:'New York',          hs:null, as:null, w:null},
+      {id:85,  home:'2D', away:'2G', date:'2 jul', venue:'Dallas',            hs:null, as:null, w:null},
+      {id:86,  home:'1J', away:'2H', date:'3 jul', venue:'Miami',             hs:null, as:null, w:null},
+      {id:87,  home:'1K', away:'3DEIJL', date:'3 jul', venue:'Kansas City',   hs:null, as:null, w:null},
+      {id:88,  home:'2D', away:'2G', date:'3 jul', venue:'Dallas',            hs:null, as:null, w:null},
+    ]
+  },
+  {
+    id: 'r16', label: 'Round of 16', dates: '4 – 7 jul',
+    matches: [
+      {id:89, home:'W73', away:'W77', date:'4 jul', venue:'Philadelphia', hs:null, as:null, w:null},
+      {id:90, home:'W74', away:'W75', date:'4 jul', venue:'Houston',      hs:null, as:null, w:null},
+      {id:91, home:'W76', away:'W78', date:'5 jul', venue:'New York',     hs:null, as:null, w:null},
+      {id:92, home:'W79', away:'W80', date:'5 jul', venue:'Mexico City',  hs:null, as:null, w:null},
+      {id:93, home:'W81', away:'W84', date:'6 jul', venue:'Los Angeles',  hs:null, as:null, w:null},
+      {id:94, home:'W82', away:'W83', date:'6 jul', venue:'Atlanta',      hs:null, as:null, w:null},
+      {id:95, home:'W85', away:'W88', date:'7 jul', venue:'Dallas',       hs:null, as:null, w:null},
+      {id:96, home:'W86', away:'W87', date:'7 jul', venue:'Seattle',      hs:null, as:null, w:null},
+    ]
+  },
+  {
+    id: 'qf', label: 'Kwartfinales', dates: '9 – 11 jul',
+    matches: [
+      {id:97, home:'W89', away:'W90', date:'9 jul',  venue:'New York',     hs:null, as:null, w:null},
+      {id:98, home:'W91', away:'W92', date:'9 jul',  venue:'Los Angeles',  hs:null, as:null, w:null},
+      {id:99, home:'W93', away:'W95', date:'10 jul', venue:'Houston',      hs:null, as:null, w:null},
+      {id:100,home:'W94', away:'W96', date:'11 jul', venue:'Miami',        hs:null, as:null, w:null},
+    ]
+  },
+  {
+    id: 'sf', label: 'Halve Finales', dates: '14 – 15 jul',
+    matches: [
+      {id:101, home:'W97',  away:'W98',  date:'14 jul', venue:'Dallas',    hs:null, as:null, w:null},
+      {id:102, home:'W99',  away:'W100', date:'15 jul', venue:'New York',  hs:null, as:null, w:null},
+    ]
+  },
+  {
+    id: '3rd', label: '3de Plaatswedstrijd', dates: '18 jul',
+    matches: [
+      {id:103, home:'L101', away:'L102', date:'18 jul', venue:'Miami', hs:null, as:null, w:null},
+    ]
+  },
+  {
+    id: 'final', label: '🏆 Finale', dates: '19 jul · MetLife Stadium, New York',
+    matches: [
+      {id:104, home:'W101', away:'W102', date:'19 jul', venue:'New York', hs:null, as:null, w:null},
+    ]
+  },
+];
+
+// Team conf lookup
+function getConf(name) {
+  const t = TEAMS.find(x => x.name === name);
+  return t ? t.conf.replace(/[^A-Z]/g,'') : '';
+}
+
+function renderKnockout() {
+  let h = '<div class="knockout-wrap">';
+
+  // Legend
+  h += `<p style="font-size:0.75em;color:#8aaec8;margin-bottom:16px">
+    Bracket wordt gevuld na afloop van de groepsfase (27 jun). 
+    Sloten zoals <b style="color:#c9a84c">1A</b>=winnaar groep A, 
+    <b style="color:#c9a84c">2B</b>=runner-up groep B, 
+    <b style="color:#c9a84c">3X</b>=beste nr.3.
+  </p>`;
+
+  for (const stage of KO_STAGES) {
+    h += `<div class="ko-stage">
+      <h3>${stage.label} &nbsp;<span style="font-size:0.8em;color:#8aaec8;font-weight:normal">${stage.dates}</span></h3>
+      <div class="ko-matches">`;
+
+    for (const m of stage.matches) {
+      const homeTeam = resolveSlot(m.home);
+      const awayTeam = resolveSlot(m.away);
+      const homeConf = homeTeam ? getConf(homeTeam) : '';
+      const awayConf = awayTeam ? getConf(awayTeam) : '';
+      const homeWon = m.w && m.w === (homeTeam || m.home);
+      const awayWon = m.w && m.w === (awayTeam || m.away);
+
+      h += `<div class="ko-match">
+        <div class="match-header">
+          <span>M${m.id} · ${m.date}</span>
+          <span>${m.venue}</span>
+        </div>
+        <div class="ko-team ${homeWon?'winner':''}">
+          <span class="conf-dot ${homeConf}-dot"></span>
+          <span class="tname ${homeTeam?'':'tbd'}">${homeTeam || m.home}</span>
+          <span class="tscore">${m.hs !== null ? m.hs : ''}</span>
+        </div>
+        <div class="ko-team ${awayWon?'winner':''}">
+          <span class="conf-dot ${awayConf}-dot"></span>
+          <span class="tname ${awayTeam?'':'tbd'}">${awayTeam || m.away}</span>
+          <span class="tscore">${m.as !== null ? m.as : ''}</span>
+        </div>
+      </div>`;
+    }
+    h += '</div></div>';
+  }
+
+  h += '<p class="ko-note">Stippen: 🔵UEFA 🟡CONMEBOL 🟢CONCACAF 🟠CAF 🟣AFC 🟩OFC</p>';
+  h += '</div>';
+  return h;
+}
+
+// Resolve bracket slot to team name (once group stage is done)
+// Currently TBD — will be filled after Jun 27
+function resolveSlot(slot) {
+  // TODO: fill in after group stage ends
+  // Example: if (slot === '1A') return groupWinner('A');
+  return null;
+}
+
+// ── State ─────────────────────────────────────────────────────────────────
+let currentTab = 'ranking', currentConf = 'ALL';
+let sortCol = 'rank', sortDir = 'asc';
+
+function getLive(name) { return LIVE[name] || null; }
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function showTab(tab) {
+  currentTab = tab;
+  ['Ranking','Groups','Knockout'].forEach(t => {
+    document.getElementById('tab'+t).classList.toggle('active', t.toLowerCase()===tab);
+  });
+  document.getElementById('filterBar').style.display = tab==='ranking' ? 'flex' : 'none';
+  render();
+}
+function filterConf(conf, btn) {
+  currentConf = conf;
+  document.querySelectorAll('.conf-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+// ── Sort ──────────────────────────────────────────────────────────────────
+function sortBy(col) {
+  sortDir = (sortCol===col && sortDir==='asc') ? 'desc' : 'asc';
+  sortCol = col;
+  render();
+}
+function sc(col) { return sortCol===col ? (sortDir==='asc'?'sa':'sd') : ''; }
+function sorted(arr) {
+  return [...arr].sort((a,b) => {
+    let va=a[sortCol], vb=b[sortCol];
+    if (typeof va==='string') { va=va.toLowerCase(); vb=vb.toLowerCase(); }
+    if (va<vb) return sortDir==='asc'?-1:1;
+    if (va>vb) return sortDir==='asc'?1:-1;
+    return 0;
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function render() {
+  const el = document.getElementById('mainContent');
+  if (currentTab==='groups')  { el.innerHTML = renderGroups();  return; }
+  if (currentTab==='knockout') { el.innerHTML = renderKnockout(); return; }
+
+  let rows = TEAMS.filter(r => currentConf==='ALL' || r.conf===currentConf);
+  rows = sorted(rows);
+  const showLive = true;
+
+  let h = `<table><thead><tr>
+    <th onclick="sortBy('rank')"    class="${sc('rank')}">Rank</th>
+    <th onclick="sortBy('name')"    class="${sc('name')}">Team</th>
+    <th>Gr.</th>
+    <th onclick="sortBy('conf')"    class="${sc('conf')}">Conf.</th>
+    <th onclick="sortBy('fifaPts')" class="${sc('fifaPts')}">FIFA Punten</th>
+    ${showLive ? '<th>WK Stand</th>' : ''}
+  </tr></thead><tbody>`;
+
+  for (const r of rows) {
+    const rc = r.rank<=3?'t3':r.rank<=10?'t10':'';
+    const cc = r.conf.replace(/[^A-Z]/g,'')||'UEFA';
+    const lv = showLive ? getLive(r.name) : null;
+    const lhtml = lv && lv.p>0
+      ? `<span class="lc">${lv.p}G <b>${lv.pts}pt</b> ${lv.gf}:${lv.ga}</span>`
+      : `<span style="color:#2a4a6a;font-size:0.8em">–</span>`;
+    h += `<tr>
+      <td><span class="rb ${rc}">${r.rank}</span></td>
+      <td>${r.name}</td>
+      <td><span class="gb">${r.group}</span></td>
+      <td><span class="cb ${cc}">${r.conf}</span></td>
+      <td><span class="pts-cell">${r.fifaPts.toFixed(2)}</span></td>
+      ${showLive ? `<td>${lhtml}</td>` : ''}
+    </tr>`;
+  }
+  h += `</tbody></table><p style="font-size:0.68em;color:#3a5a7a;margin-top:8px;text-align:right">${rows.length} teams</p>`;
+  el.innerHTML = h;
+}
+
+function renderGroups() {
+  // Build group lookup
+  const groups = {};
+  for (const t of TEAMS) {
+    if (!groups[t.group]) groups[t.group] = [];
+    const lv = getLive(t.name) || {p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0};
+    groups[t.group].push({...t, ...lv});
+  }
+  // Sort each group: pts desc, then gd desc, then gf desc, then FIFA rank asc
+  for (const g of Object.keys(groups)) {
+    groups[g].sort((a,b) => {
+      if (b.pts !== a.pts) return b.pts - a.pts;
+      const gda = a.gf-a.ga, gdb = b.gf-b.ga;
+      if (gdb !== gda) return gdb - gda;
+      if (b.gf !== a.gf) return b.gf - a.gf;
+      return a.rank - b.rank;
+    });
+  }
+
+  let h = '<div class="groups-grid">';
+  for (const g of 'ABCDEFGHIJKL'.split('')) {
+    const teams = groups[g] || [];
+    h += `<div class="group-card"><h3>GROEP ${g}</h3>
+      <table><thead><tr>
+        <th style="width:3px"></th><th>Team</th><th title="Gespeeld">G</th>
+        <th title="Gewonnen">W</th><th title="Gelijk">G</th><th title="Verloren">V</th>
+        <th title="Doelpunten">D</th><th title="Punten">Pt</th>
+      </tr></thead><tbody>`;
+    teams.forEach((t,i) => {
+      const cc = t.conf.replace(/[^A-Z]/g,'')||'UEFA';
+      const advClass = i<2 ? 'adv' : i===2 ? 'adv2' : '';
+      const gd = t.gf - t.ga;
+      const gdStr = t.p>0 ? (gd>0?'+'+gd:gd) : '-';
+      h += `<tr>
+        <td class="${advClass}"></td>
+        <td><span class="cb ${cc}" style="font-size:0.62em;padding:1px 4px">${t.conf.substring(0,3)}</span> ${t.name}</td>
+        <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
+        <td style="font-size:0.85em">${t.p>0?t.gf+':'+t.ga:'-'}</td>
+        <td><b style="color:#c9a84c">${t.pts}</b></td>
+      </tr>`;
+    });
+    h += '</tbody></table></div>';
+  }
+  h += '</div><p style="font-size:0.68em;color:#3a5a7a;margin-top:12px">🟢 Groen = doorgeplaatst · Blauw = mogelijk door als beste nr.3</p>';
+  return h;
+}
+
+// ── Load standings from backend ──────────────────────────────────────────
+async function loadStandings() {
+  try {
+    const res  = await fetch('/api/standings');
+    const data = await res.json();
+    if (data.data) {
+      Object.assign(LIVE, data.data);
+      document.getElementById('stampTs').textContent =
+        '📅 Bijgewerkt: ' + (data.updated_at || '?');
+      render();
+    } else {
+      document.getElementById('stampTs').textContent = '📅 Nog geen live data — klik Update';
+    }
+  } catch(e) {
+    document.getElementById('stampTs').textContent = '⚠ Kan stand niet laden';
+  }
+}
+
+function refreshStandings() {
+  window.location.href = '/admin';
+}
+
+async function doRefresh() {
+  const pw = document.getElementById('pwInput').value.trim();
+  if (!pw) return;
+  const btn     = document.getElementById('btnRefresh');
+  const stamp   = document.getElementById('stampTs');
+  const pwError = document.getElementById('pwError');
+
+  document.getElementById('pwModal').style.display = 'none';
+  btn.disabled = true; btn.textContent = '↻ Bezig...';
+  stamp.textContent = '⏳ Claude haalt stand op...';
+
+  try {
+    const res  = await fetch('/api/refresh', {
+      method: 'POST',
+      headers: { 'X-Admin-Key': pw }
+    });
+    const data = await res.json();
+    if (res.status === 401) {
+      stamp.textContent = '✗ Onjuist wachtwoord';
+      return;
+    }
+    if (data.success) {
+      await loadStandings();
+    } else {
+      stamp.textContent = '✗ ' + (data.error || 'Onbekende fout');
+    }
+  } catch(e) {
+    stamp.textContent = '✗ Verbindingsfout';
+  } finally {
+    btn.disabled = false; btn.textContent = '↻ Update stand';
+  }
+}
+
+function closeModal() {
+  document.getElementById('pwModal').style.display = 'none';
+}
+
+// Load on startup
+loadStandings();
+// Show filter bar on initial ranking tab
+document.getElementById('filterBar').style.display = 'flex';
+render();
+</script>
+  </div>
+</div>
+
+</body>
+</html>
