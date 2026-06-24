@@ -82,44 +82,7 @@ tbody td { padding: 7px 7px; vertical-align: middle; }
 
 footer { text-align:center; padding:14px; font-size:0.68em; color:#3a5a7a; border-top:1px solid #1a2e42; margin-top:10px; }
 
-/* ── Knockout bracket ── */
-.knockout-wrap { padding: 14px; overflow-x: auto; }
-.ko-stage { margin-bottom: 28px; }
-.ko-stage h3 {
-  color: #c9a84c; font-size: 0.9em; letter-spacing: 1px;
-  border-bottom: 1px solid #c9a84c; padding-bottom: 6px; margin-bottom: 12px;
-}
-.ko-matches {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 10px;
-}
-.ko-match {
-  background: #111f2e; border: 1px solid #1a2e42; border-radius: 8px;
-  overflow: hidden; font-size: 0.82em;
-}
-.ko-match .match-header {
-  background: #1a2e42; padding: 4px 10px; font-size: 0.7em;
-  color: #8aaec8; display: flex; justify-content: space-between;
-}
-.ko-team {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 10px; border-bottom: 1px solid #0d1b2a;
-}
-.ko-team:last-child { border-bottom: none; }
-.ko-team.winner { background: #0d2137; }
-.ko-team .tname { color: #e0e0e0; flex: 1; }
-.ko-team .tname.tbd { color: #3a5a7a; font-style: italic; }
-.ko-team .tscore {
-  font-weight: bold; color: #c9a84c; min-width: 20px; text-align: right;
-}
-.ko-team .conf-dot {
-  width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; flex-shrink: 0;
-}
-.UEFA-dot{background:#5b9bd5;} .CONMEBOL-dot{background:#f0c84a;}
-.CONCACAF-dot{background:#4caf7d;} .CAF-dot{background:#e07b3a;}
-.AFC-dot{background:#b07fd4;} .OFC-dot{background:#5bbf7a;}
-.ko-note { font-size:0.68em; color:#3a5a7a; margin-top:10px; text-align:center; }
+
 </style>
 </head>
 <body>
@@ -366,54 +329,7 @@ function getConf(name) {
   return t ? t.conf.replace(/[^A-Z]/g,'') : '';
 }
 
-function renderKnockout() {
-  let h = '<div class="knockout-wrap">';
 
-  // Legend
-  h += `<p style="font-size:0.75em;color:#8aaec8;margin-bottom:16px">
-    Bracket wordt gevuld na afloop van de groepsfase (27 jun). 
-    Sloten zoals <b style="color:#c9a84c">1A</b>=winnaar groep A, 
-    <b style="color:#c9a84c">2B</b>=runner-up groep B, 
-    <b style="color:#c9a84c">3X</b>=beste nr.3.
-  </p>`;
-
-  for (const stage of KO_STAGES) {
-    h += `<div class="ko-stage">
-      <h3>${stage.label} &nbsp;<span style="font-size:0.8em;color:#8aaec8;font-weight:normal">${stage.dates}</span></h3>
-      <div class="ko-matches">`;
-
-    for (const m of stage.matches) {
-      const homeTeam = resolveSlot(m.home);
-      const awayTeam = resolveSlot(m.away);
-      const homeConf = homeTeam ? getConf(homeTeam) : '';
-      const awayConf = awayTeam ? getConf(awayTeam) : '';
-      const homeWon = m.w && m.w === (homeTeam || m.home);
-      const awayWon = m.w && m.w === (awayTeam || m.away);
-
-      h += `<div class="ko-match">
-        <div class="match-header">
-          <span>M${m.id} · ${m.date}</span>
-          <span>${m.venue}</span>
-        </div>
-        <div class="ko-team ${homeWon?'winner':''}">
-          <span class="conf-dot ${homeConf}-dot"></span>
-          <span class="tname ${homeTeam?'':'tbd'}">${homeTeam || m.home}</span>
-          <span class="tscore">${m.hs !== null ? m.hs : ''}</span>
-        </div>
-        <div class="ko-team ${awayWon?'winner':''}">
-          <span class="conf-dot ${awayConf}-dot"></span>
-          <span class="tname ${awayTeam?'':'tbd'}">${awayTeam || m.away}</span>
-          <span class="tscore">${m.as !== null ? m.as : ''}</span>
-        </div>
-      </div>`;
-    }
-    h += '</div></div>';
-  }
-
-  h += '<p class="ko-note">Stippen: 🔵UEFA 🟡CONMEBOL 🟢CONCACAF 🟠CAF 🟣AFC 🟩OFC</p>';
-  h += '</div>';
-  return h;
-}
 
 // Resolve bracket slot to team name (once group stage is done)
 // Currently TBD — will be filled after Jun 27
@@ -432,7 +348,7 @@ function getLive(name) { return LIVE[name] || null; }
 // ── Tabs ──────────────────────────────────────────────────────────────────
 function showTab(tab) {
   currentTab = tab;
-  ['Ranking','Groups','Knockout'].forEach(t => {
+  ['Ranking','Groups'].forEach(t => {
     document.getElementById('tab'+t).classList.toggle('active', t.toLowerCase()===tab);
   });
   document.getElementById('filterBar').style.display = tab==='ranking' ? 'flex' : 'none';
@@ -466,7 +382,6 @@ function sorted(arr) {
 function render() {
   const el = document.getElementById('mainContent');
   if (currentTab==='groups')  { el.innerHTML = renderGroups();  return; }
-  if (currentTab==='knockout') { el.innerHTML = renderKnockout(); return; }
 
   let rows = TEAMS.filter(r => currentConf==='ALL' || r.conf===currentConf);
   rows = sorted(rows);
