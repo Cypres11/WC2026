@@ -160,7 +160,8 @@ DEFAULT_MATCHES = [
 ]
 
 # ── Persistent storage ──────────────────────────────────────────────────────
-SCORES_FILE = os.path.join(os.path.dirname(__file__), 'scores.json')
+SCORES_FILE   = os.path.join(os.path.dirname(__file__), 'scores.json')
+BRACKET_FILE  = os.path.join(os.path.dirname(__file__), 'bracket.json')
 
 def load_scores():
     """Laad scores van schijf, of gebruik defaults als bestand niet bestaat."""
@@ -182,6 +183,25 @@ def save_scores(matches, updated_at):
         print(f"Scores opgeslagen naar {SCORES_FILE}")
     except Exception as e:
         print(f"Fout bij opslaan scores: {e}")
+
+def load_bracket():
+    if os.path.exists(BRACKET_FILE):
+        try:
+            with open(BRACKET_FILE) as f:
+                return json.load(f)
+        except:
+            pass
+    return {}
+
+def save_bracket(results):
+    try:
+        with open(BRACKET_FILE, 'w') as f:
+            json.dump(results, f)
+    except Exception as e:
+        print(f"Fout bij opslaan bracket: {e}")
+
+# Bracket cache
+_bracket = {"results": load_bracket()}
 
 # Initialiseer cache — laad van schijf of gebruik defaults
 _matches, _updated_at = load_scores()
@@ -240,6 +260,42 @@ def admin():
 def logout():
     session.clear()
     return redirect("/admin")
+
+# ── Bracket routes ──────────────────────────────────────────────────────────
+
+@app.route("/bracket")
+def bracket():
+    with open(os.path.join(os.path.dirname(__file__), "static", "bracket.html")) as f:
+        return f.read()
+
+@app.route("/api/bracket", methods=["GET"])
+def get_bracket():
+    return jsonify({"results": _bracket["results"]})
+
+@app.route("/api/bracket", methods=["POST"])
+def save_bracket_result():
+    admin_key = os.environ.get("ADMIN_KEY", "wc2026")
+    if admin_key and request.headers.get("X-Admin-Key","") != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json()
+    match_id = data.get("matchId")
+    if not match_id:
+        return jsonify({"error": "No matchId"}), 400
+    _bracket["results"][match_id] = data
+    save_bracket(_bracket["results"])
+    return jsonify({"success": True, "results": _bracket["results"]})
+
+@app.route("/api/bracket/clear", methods=["POST"])
+def clear_bracket_result():
+    admin_key = os.environ.get("ADMIN_KEY", "wc2026")
+    if admin_key and request.headers.get("X-Admin-Key","") != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json()
+    match_id = data.get("matchId")
+    if match_id and match_id in _bracket["results"]:
+        del _bracket["results"][match_id]
+        save_bracket(_bracket["results"])
+    return jsonify({"success": True, "results": _bracket["results"]})
 
 # ── HTML Templates ──────────────────────────────────────────────────────────
 
