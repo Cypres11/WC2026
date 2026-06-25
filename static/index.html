@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- v2026-06-24 20:05:22 -->
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
@@ -83,6 +84,81 @@ tbody td { padding: 7px 7px; vertical-align: middle; }
 footer { text-align:center; padding:14px; font-size:0.68em; color:#3a5a7a; border-top:1px solid #1a2e42; margin-top:10px; }
 
 
+
+/* ── Team info modal ── */
+.team-modal-bg {
+  display:none; position:fixed; top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.8); z-index:200;
+  align-items:center; justify-content:center; padding:16px;
+}
+.team-modal-bg.open { display:flex; }
+.team-modal {
+  background:#111f2e; border:1px solid #c9a84c; border-radius:12px;
+  width:100%; max-width:560px; max-height:88vh; overflow-y:auto;
+}
+.team-modal-header {
+  background:linear-gradient(135deg,#1a3a5c,#0d2137);
+  padding:16px 20px; border-bottom:2px solid #c9a84c;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:1;
+}
+.team-modal-header h2 { color:#c9a84c; font-size:1.1em; display:flex; align-items:center; gap:10px; }
+.team-modal-close {
+  background:transparent; border:1px solid #2a4a6a; color:#8aaec8;
+  border-radius:6px; padding:4px 10px; cursor:pointer; font-size:1.1em;
+  font-family:Arial;
+}
+.team-modal-close:hover { border-color:#c9a84c; color:#c9a84c; }
+.team-modal-body { padding:16px; }
+.team-section { margin-bottom:16px; }
+.team-section h3 {
+  color:#c9a84c; font-size:0.8em; letter-spacing:1px;
+  text-transform:uppercase; border-bottom:1px solid #1a2e42;
+  padding-bottom:4px; margin-bottom:10px;
+}
+.team-stat-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+}
+.team-stat {
+  background:#0d1b2a; border-radius:6px; padding:8px 12px;
+}
+.team-stat .label { font-size:0.68em; color:#3a5a7a; margin-bottom:2px; }
+.team-stat .value { font-size:0.85em; color:#e0e0e0; font-weight:bold; }
+.player-card {
+  background:#0d1b2a; border-radius:6px; padding:8px 12px;
+  margin-bottom:6px; display:flex; align-items:center; gap:10px;
+}
+.player-pos {
+  background:#1a3a5c; border:1px solid #2a4a6a; border-radius:4px;
+  padding:2px 6px; font-size:0.7em; font-weight:bold; color:#8aaec8;
+  min-width:36px; text-align:center; flex-shrink:0;
+}
+.player-pos.GK  { border-color:#f0c84a; color:#f0c84a; }
+.player-pos.DEF { border-color:#5b9bd5; color:#5b9bd5; }
+.player-pos.MID { border-color:#4caf7d; color:#4caf7d; }
+.player-pos.FWD { border-color:#e05c5c; color:#e05c5c; }
+.player-name { font-size:0.85em; color:#e0e0e0; font-weight:bold; }
+.player-detail { font-size:0.72em; color:#8aaec8; margin-top:1px; }
+.team-badges { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.team-badge {
+  background:#1a2e42; border:1px solid #2a4a6a; border-radius:20px;
+  padding:3px 10px; font-size:0.72em; color:#8aaec8;
+}
+.outlook-text {
+  font-size:0.82em; color:#b0c8dc; line-height:1.6;
+  background:#0d1b2a; border-radius:6px; padding:10px 12px;
+}
+.team-loading {
+  text-align:center; padding:40px; color:#8aaec8; font-size:0.85em;
+}
+.team-row-clickable { cursor:pointer; }
+.team-row-clickable:hover td { background:#1a3a5c !important; }
+.team-row-clickable .tname-link { 
+  color:#e0e0e0; text-decoration:none;
+  display:flex; align-items:center; gap:6px;
+}
+.team-row-clickable .tname-link:hover { color:#c9a84c; }
+.click-hint { font-size:0.65em; color:#2a4a6a; }
 </style>
 </head>
 <body>
@@ -117,7 +193,7 @@ footer { text-align:center; padding:14px; font-size:0.68em; color:#3a5a7a; borde
 
 <div class="content" id="mainContent"></div>
 
-<footer>FIFA ranking: officieel jun 2026 · Live WK-stand via Claude AI · Persoonlijk gebruik · RFB Consult v3.2</footer>
+<footer>FIFA ranking: officieel jun 2026 · Live WK-stand via Claude AI · Persoonlijk gebruik · RFB Consult v3.1</footer>
 
 <script>
 // ── 48 WC teams (official FIFA draw Dec 2025) ─────────────────────────────
@@ -405,7 +481,9 @@ function render() {
       : `<span style="color:#2a4a6a;font-size:0.8em">–</span>`;
     h += `<tr>
       <td><span class="rb ${rc}">${r.rank}</span></td>
-      <td>${r.name}</td>
+      <td class="team-row-clickable" onclick="showTeamInfo('${r.name}')">
+        <span class="tname-link">${r.name} <span class="click-hint">ℹ</span></span>
+      </td>
       <td><span class="gb">${r.group}</span></td>
       <td><span class="cb ${cc}">${r.conf}</span></td>
       <td><span class="pts-cell">${r.fifaPts.toFixed(2)}</span></td>
@@ -524,10 +602,125 @@ function closeModal() {
 
 // Load on startup
 loadStandings();
+
+// ── Team info cache & modal ───────────────────────────────────────────────
+const teamCache = {};
+
+async function showTeamInfo(teamName) {
+  document.getElementById('teamModalTitle').textContent = '⏳ ' + teamName;
+  document.getElementById('teamModalBody').innerHTML = '<div class="team-loading"><div class="spinner" style="display:inline-block;width:20px;height:20px;border:2px solid #2a4a6a;border-top-color:#c9a84c;border-radius:50%;animation:spin 0.8s linear infinite;margin-right:8px;vertical-align:middle"></div>Loading team info from Claude AI...</div>';
+  document.getElementById('teamModalBg').classList.add('open');
+
+  if (teamCache[teamName]) {
+    renderTeamModal(teamCache[teamName]);
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/team/' + encodeURIComponent(teamName));
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+    teamCache[teamName] = json.data;
+    renderTeamModal(json.data);
+  } catch(e) {
+    document.getElementById('teamModalBody').innerHTML =
+      '<div class="team-loading" style="color:#e05c5c">✗ ' + e.message + '</div>';
+  }
+}
+
+function renderTeamModal(d) {
+  document.getElementById('teamModalTitle').innerHTML =
+    `<span style="font-size:1.4em">${d.flag||'🏳'}</span> ${d.name} <span style="font-size:0.7em;color:#8aaec8">${d.nickname||''}</span>`;
+
+  const notable = (d.history?.notable_editions||[]).map(e =>
+    `<span class="team-badge">${e}</span>`).join('');
+
+  const players = (d.key_players||[]).map(p => `
+    <div class="player-card">
+      <span class="player-pos ${p.position}">${p.position}</span>
+      <div>
+        <div class="player-name">${p.name}</div>
+        <div class="player-detail">${p.club} · Age ${p.age} · ${p.caps} caps</div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('teamModalBody').innerHTML = `
+    <div class="team-section">
+      <div class="team-badges">
+        <span class="team-badge">🌍 ${d.confederation}</span>
+        <span class="team-badge">👥 Group ${d.wc2026?.group||'?'}</span>
+        <span class="team-badge">🎯 ${d.wc2026?.formation||'?'}</span>
+      </div>
+    </div>
+
+    <div class="team-section">
+      <h3>🏆 World Cup History</h3>
+      <div class="team-stat-grid">
+        <div class="team-stat">
+          <div class="label">Appearances</div>
+          <div class="value">${d.history?.wc_appearances||'?'}</div>
+        </div>
+        <div class="team-stat">
+          <div class="label">Best Result</div>
+          <div class="value">${d.history?.best_result||'?'}</div>
+        </div>
+        <div class="team-stat">
+          <div class="label">Titles</div>
+          <div class="value">${d.history?.wc_titles||0} 🏆</div>
+        </div>
+        <div class="team-stat">
+          <div class="label">Coach 2026</div>
+          <div class="value">${d.wc2026?.coach||'?'}</div>
+        </div>
+      </div>
+      ${notable ? `<div class="team-badges" style="margin-top:10px">${notable}</div>` : ''}
+    </div>
+
+    <div class="team-section">
+      <h3>⭐ Key Players</h3>
+      ${players || '<p style="color:#3a5a7a;font-size:0.82em">No player data available</p>'}
+    </div>
+
+    <div class="team-section">
+      <h3>💪 Strengths</h3>
+      <div class="outlook-text">${d.strengths||'—'}</div>
+    </div>
+
+    <div class="team-section">
+      <h3>🔮 WC 2026 Outlook</h3>
+      <div class="outlook-text">${d.wc2026_outlook||'—'}</div>
+    </div>
+  `;
+}
+
+function closeTeamModal(event) {
+  if (event && event.target !== document.getElementById('teamModalBg')) return;
+  document.getElementById('teamModalBg').classList.remove('open');
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('teamModalBg').classList.remove('open');
+});
+
 // Show filter bar on initial ranking tab
 document.getElementById('filterBar').style.display = 'flex';
 render();
 </script>
+  </div>
+</div>
+
+
+<!-- Team info modal -->
+<div class="team-modal-bg" id="teamModalBg" onclick="closeTeamModal(event)">
+  <div class="team-modal" id="teamModal">
+    <div class="team-modal-header">
+      <h2 id="teamModalTitle">Team info</h2>
+      <button class="team-modal-close" onclick="closeTeamModal()">✕</button>
+    </div>
+    <div class="team-modal-body" id="teamModalBody">
+      <div class="team-loading">⏳ Loading team info...</div>
+    </div>
   </div>
 </div>
 

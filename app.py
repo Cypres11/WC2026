@@ -203,6 +203,9 @@ def save_bracket(results):
 # Bracket cache
 _bracket = {"results": load_bracket()}
 
+# Team info cache (in-memory, resets on restart)
+_team_cache = {}
+
 # Initialiseer cache — laad van schijf of gebruik defaults
 _matches, _updated_at = load_scores()
 _cache["matches"]    = _matches
@@ -214,7 +217,13 @@ _cache["updated_at"] = _updated_at
 @app.route("/")
 def index():
     with open(os.path.join(os.path.dirname(__file__), "static", "index.html")) as f:
-        return f.read()
+        html = f.read()
+    from flask import make_response
+    resp = make_response(html)
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @app.route("/api/standings")
 def get_standings():
@@ -261,12 +270,73 @@ def logout():
     session.clear()
     return redirect("/admin")
 
+# ── Team info route ─────────────────────────────────────────────────────────
+
+@app.route("/api/team/<team_name>")
+def get_team_info(team_name):
+    """Get team info via Claude API, with in-memory caching."""
+    if team_name in _team_cache:
+        return jsonify({"data": _team_cache[team_name], "cached": True})
+
+    try:
+        message = client.messages.create(
+            model="claude-sonnet-4-6",
+            max_tokens=1500,
+            messages=[{
+                "role": "user",
+                "content": f"""Give me a concise football team profile for {team_name} at the FIFA World Cup 2026.
+Return ONLY valid JSON, no markdown, no explanation:
+{{
+  "name": "{team_name}",
+  "flag": "🏳",
+  "nickname": "team nickname",
+  "confederation": "UEFA/CONMEBOL/etc",
+  "history": {{
+    "wc_appearances": 12,
+    "best_result": "Winner (1966)",
+    "wc_titles": 1,
+    "notable_editions": ["1966 Winner", "1990 Runner-up"]
+  }},
+  "wc2026": {{
+    "group": "A",
+    "coach": "Coach Name",
+    "formation": "4-3-3",
+    "qualification": "How they qualified"
+  }},
+  "key_players": [
+    {{"name": "Player Name", "position": "GK/DEF/MID/FWD", "club": "Club Name", "age": 28, "caps": 45}},
+    {{"name": "Player Name", "position": "FWD", "club": "Club Name", "age": 25, "caps": 30}},
+    {{"name": "Player Name", "position": "MID", "club": "Club Name", "age": 27, "caps": 38}}
+  ],
+  "strengths": "Brief description of team strengths",
+  "wc2026_outlook": "Brief prediction/outlook for WC2026"
+}}"""
+            }]
+        )
+
+        raw = message.content[0].text
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        start = raw.index("{")
+        end = raw.rindex("}") + 1
+        data = json.loads(raw[start:end])
+        _team_cache[team_name] = data
+        return jsonify({"data": data, "cached": False})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # ── Bracket routes ──────────────────────────────────────────────────────────
 
 @app.route("/bracket")
 def bracket():
     with open(os.path.join(os.path.dirname(__file__), "static", "bracket.html")) as f:
-        return f.read()
+        html = f.read()
+    from flask import make_response
+    resp = make_response(html)
+    resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @app.route("/api/bracket", methods=["GET"])
 def get_bracket():
