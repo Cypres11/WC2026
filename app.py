@@ -16,9 +16,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "wc2026rfbconsult")
 # ── Anthropic client ────────────────────────────────────────────────────────
 client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 
-# ── Anthropic client ────────────────────────────────────────────────────────
-client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
-
 # ── In-memory cache ─────────────────────────────────────────────────────────
 _cache = {"data": {}, "updated_at": None}
 
@@ -332,6 +329,54 @@ Return ONLY valid JSON, no markdown, no explanation:
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ── Export / Import routes ──────────────────────────────────────────────────
+
+@app.route("/api/export")
+def export_data():
+    """Export all scores and bracket results as JSON download."""
+    admin_key = os.environ.get("ADMIN_KEY", "wc2026")
+    provided = request.headers.get("X-Admin-Key", "") or request.args.get("key", "")
+    if admin_key and provided != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    export = {
+        "exported_at": datetime.now().strftime("%Y-%m-%d %H:%M UTC"),
+        "version": "wc2026-v1",
+        "matches":  _cache.get("matches", []),
+        "updated_at": _cache.get("updated_at", ""),
+        "bracket":  _bracket.get("results", {}),
+    }
+    from flask import Response
+    resp = Response(
+        json.dumps(export, indent=2),
+        mimetype="application/json",
+        headers={"Content-Disposition": "attachment; filename=wc2026_backup.json"}
+    )
+    return resp
+
+@app.route("/api/import", methods=["POST"])
+def import_data():
+    """Import scores and bracket results from JSON."""
+    admin_key = os.environ.get("ADMIN_KEY", "wc2026")
+    if admin_key and request.headers.get("X-Admin-Key","") != admin_key:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    if not data or data.get("version") != "wc2026-v1":
+        return jsonify({"error": "Ongeldig backup bestand"}), 400
+
+    if "matches" in data:
+        _cache["matches"]    = data["matches"]
+        _cache["data"]       = compute_standings(data["matches"])
+        _cache["updated_at"] = data.get("updated_at", datetime.now().strftime("%d %b %Y %H:%M UTC"))
+        save_scores(_cache["matches"], _cache["updated_at"])
+
+    if "bracket" in data:
+        _bracket["results"] = data["bracket"]
+        save_bracket(_bracket["results"])
+
+    return jsonify({"success": True, "message": "Data succesvol hersteld!"})
+
 # ── Bracket routes ──────────────────────────────────────────────────────────
 
 @app.route("/bracket")
@@ -398,7 +443,55 @@ button:hover{background:#c9a84c;color:#0d1b2a}
     <input type="password" name="password" placeholder="Wachtwoord..." autofocus>
     <button type="submit">Inloggen</button>
   </form>
-</div></body></html>"""
+</div><script>
+const ADMIN_KEY = document.cookie.split(';').find(c=>c.trim().startsWith('admin_key='))?.split('=')[1] || '';
+
+async function exportData() {
+  const pw = prompt('Admin wachtwoord voor export:');
+  if (!pw) return;
+  const res = await fetch('/api/export?key=' + encodeURIComponent(pw));
+  if (res.status === 401) { alert('Onjuist wachtwoord'); return; }
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'wc2026_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const pw = prompt('Admin wachtwoord voor import:');
+  if (!pw) return;
+  const msg = document.getElementById('importMsg');
+  msg.textContent = '⏳ Bezig...';
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const res  = await fetch('/api/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': pw },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.success) {
+      msg.textContent = '✓ ' + result.message;
+      msg.style.color = '#4caf7d';
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      msg.textContent = '✗ ' + (result.error || 'Fout');
+      msg.style.color = '#e05c5c';
+    }
+  } catch(e) {
+    msg.textContent = '✗ ' + e.message;
+    msg.style.color = '#e05c5c';
+  }
+  input.value = '';
+}
+</script>
+</body></html>"""
 
 ADMIN_HTML = """<!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -434,6 +527,19 @@ footer{margin-top:24px;text-align:center}
   <h1>⚽ WC2026 Admin — Scores invoeren</h1>
   <div><a href="/">← Bekijk app</a> &nbsp; <a href="/admin/logout">Uitloggen</a></div>
 </header>
+
+<!-- Export / Import sectie -->
+<div style="background:#0d2137;border:1px solid #c9a84c;border-radius:8px;padding:14px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+  <span style="font-size:0.8em;color:#c9a84c;font-weight:bold">💾 Backup</span>
+  <button type="button" onclick="exportData()" class="expbtn" style="background:#1a3a5c;border:1px solid #4caf7d;color:#4caf7d;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.8em;font-family:Arial">
+    ⬇ Download backup
+  </button>
+  <label style="background:#1a3a5c;border:1px solid #e07b3a;color:#e07b3a;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.8em">
+    ⬆ Herstel backup
+    <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(this)">
+  </label>
+  <span id="importMsg" style="font-size:0.75em;color:#4caf7d"></span>
+</div>
 
 {% if saved %}
 <div class="saved">✓ Stand opgeslagen en bijgewerkt! Alle bezoekers zien nu de actuele stand.</div>
@@ -471,6 +577,54 @@ footer{margin-top:24px;text-align:center}
     <a href="/" class="viewbtn">Bekijk live app →</a>
   </footer>
 </form>
+<script>
+const ADMIN_KEY = document.cookie.split(';').find(c=>c.trim().startsWith('admin_key='))?.split('=')[1] || '';
+
+async function exportData() {
+  const pw = prompt('Admin wachtwoord voor export:');
+  if (!pw) return;
+  const res = await fetch('/api/export?key=' + encodeURIComponent(pw));
+  if (res.status === 401) { alert('Onjuist wachtwoord'); return; }
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = 'wc2026_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const pw = prompt('Admin wachtwoord voor import:');
+  if (!pw) return;
+  const msg = document.getElementById('importMsg');
+  msg.textContent = '⏳ Bezig...';
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const res  = await fetch('/api/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Key': pw },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (result.success) {
+      msg.textContent = '✓ ' + result.message;
+      msg.style.color = '#4caf7d';
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      msg.textContent = '✗ ' + (result.error || 'Fout');
+      msg.style.color = '#e05c5c';
+    }
+  } catch(e) {
+    msg.textContent = '✗ ' + e.message;
+    msg.style.color = '#e05c5c';
+  }
+  input.value = '';
+}
+</script>
 </body></html>"""
 
 if __name__ == "__main__":
