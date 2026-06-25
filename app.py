@@ -5,12 +5,19 @@ Flask backend voor Railway deployment - v4.1 met admin invoer
 """
 
 from flask import Flask, jsonify, request, redirect, session, render_template_string
+import anthropic
 import json
-import os, os
+import os
 from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "wc2026rfbconsult")
+
+# ── Anthropic client ────────────────────────────────────────────────────────
+client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+
+# ── Anthropic client ────────────────────────────────────────────────────────
+client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 
 # ── In-memory cache ─────────────────────────────────────────────────────────
 _cache = {"data": {}, "updated_at": None}
