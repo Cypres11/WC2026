@@ -405,9 +405,16 @@ function renderMatch(m, isFinal=false) {
   const r = results[m.id] || {};
   const homeTeam = r.home || resolveSlot(m.home);
   const awayTeam = r.away || resolveSlot(m.away);
-  // Map slot to readable label if team not yet known
-  const homeLabel = homeTeam || (m.home.startsWith('W') ? 'Winnaar M'+ m.home.substring(1) : m.home.startsWith('L') ? 'Verliezer M'+ m.home.substring(1) : m.home);
-  const awayLabel = awayTeam || (m.away.startsWith('W') ? 'Winnaar M'+ m.away.substring(1) : m.away.startsWith('L') ? 'Verliezer M'+ m.away.substring(1) : m.away);
+  // Safely map slot to readable label
+  function slotLabel(slot) {
+    if (!slot) return '?';
+    if (typeof slot !== 'string') return '?';
+    if (slot.startsWith('W')) return 'Winnaar M' + slot.substring(1);
+    if (slot.startsWith('L')) return 'Verliezer M' + slot.substring(1);
+    return slot;
+  }
+  const homeLabel = homeTeam || slotLabel(m.home);
+  const awayLabel = awayTeam || slotLabel(m.away);
   const homeConf = getConf(homeTeam);
   const awayConf = getConf(awayTeam);
   const hasResult = r.home90 !== undefined && r.home90 !== null;
@@ -443,9 +450,16 @@ function openModal(matchId) {
   const r = results[matchId] || {};
   const homeTeam = r.home || resolveSlot(m.home);
   const awayTeam = r.away || resolveSlot(m.away);
-  // Map slot to readable label if team not yet known
-  const homeLabel = homeTeam || (m.home.startsWith('W') ? 'Winnaar M'+ m.home.substring(1) : m.home.startsWith('L') ? 'Verliezer M'+ m.home.substring(1) : m.home);
-  const awayLabel = awayTeam || (m.away.startsWith('W') ? 'Winnaar M'+ m.away.substring(1) : m.away.startsWith('L') ? 'Verliezer M'+ m.away.substring(1) : m.away);
+  // Safely map slot to readable label
+  function slotLabel(slot) {
+    if (!slot) return '?';
+    if (typeof slot !== 'string') return '?';
+    if (slot.startsWith('W')) return 'Winnaar M' + slot.substring(1);
+    if (slot.startsWith('L')) return 'Verliezer M' + slot.substring(1);
+    return slot;
+  }
+  const homeLabel = homeTeam || slotLabel(m.home);
+  const awayLabel = awayTeam || slotLabel(m.away);
 
   document.getElementById('modalTitle').textContent = `${matchId} · ${m.date} · ${m.venue}`;
   // Show both team names in modal
@@ -478,9 +492,16 @@ async function saveMatch() {
   const r = results[editingId] || {};
   const homeTeam = r.home || resolveSlot(m.home);
   const awayTeam = r.away || resolveSlot(m.away);
-  // Map slot to readable label if team not yet known
-  const homeLabel = homeTeam || (m.home.startsWith('W') ? 'Winnaar M'+ m.home.substring(1) : m.home.startsWith('L') ? 'Verliezer M'+ m.home.substring(1) : m.home);
-  const awayLabel = awayTeam || (m.away.startsWith('W') ? 'Winnaar M'+ m.away.substring(1) : m.away.startsWith('L') ? 'Verliezer M'+ m.away.substring(1) : m.away);
+  // Safely map slot to readable label
+  function slotLabel(slot) {
+    if (!slot) return '?';
+    if (typeof slot !== 'string') return '?';
+    if (slot.startsWith('W')) return 'Winnaar M' + slot.substring(1);
+    if (slot.startsWith('L')) return 'Verliezer M' + slot.substring(1);
+    return slot;
+  }
+  const homeLabel = homeTeam || slotLabel(m.home);
+  const awayLabel = awayTeam || slotLabel(m.away);
 
   const home90  = document.getElementById('inHome90').value.trim();
   const away90  = document.getElementById('inAway90').value.trim();
