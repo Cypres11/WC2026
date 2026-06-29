@@ -403,10 +403,8 @@ function renderBracket() {
   html += `<div class="round" style="justify-content:center">
     <div class="round-label">Finales</div>
     <div class="round-matches" style="gap:20px">`;
-  for (const round of extraRounds) {
-    for (const m of round.matches) {
-      html += renderMatch(m, m.id === 'M104');
-    }
+  for (const m of extraRounds) {
+    html += renderMatch(m, m.id === 'M104');
   }
   html += '</div></div>';
 
