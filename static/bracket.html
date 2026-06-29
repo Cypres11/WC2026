@@ -251,12 +251,12 @@ const R32_FIXED = [
   {id:"M80", home:"United States",       away:"Bosnia and Herzegovina", date:"1 jul",  venue:"San Francisco"},
   {id:"M81", home:"Belgium",             away:"Senegal",                date:"1 jul",  venue:"Philadelphia"},
   {id:"M82", home:"England",             away:"DR Congo",               date:"2 jul",  venue:"Vancouver"},
-  {id:"M83", home:"Colombia",            away:"Croatia",                date:"2 jul",  venue:"Dallas"},
+  {id:"M83", home:"Portugal",            away:"Croatia",                date:"2 jul",  venue:"Dallas"},
   {id:"M84", home:"Spain",               away:"Austria",                date:"2 jul",  venue:"Los Angeles"},
   {id:"M85", home:"Switzerland",         away:"Algeria",                date:"3 jul",  venue:"Seattle"},
   {id:"M86", home:"Argentina",           away:"Cape Verde",             date:"3 jul",  venue:"Miami"},
   {id:"M87", home:"Australia",           away:"Egypt",                  date:"3 jul",  venue:"Kansas City"},
-  {id:"M88", home:"Portugal",            away:"Ghana",                  date:"3 jul",  venue:"Atlanta"},
+  {id:"M88", home:"Colombia",            away:"Ghana",                  date:"3 jul",  venue:"Atlanta"},
 ];
 
 // Round of 16 bracket (winners of R32 matches)
@@ -323,13 +323,12 @@ function resolveSlot(slot) {
   // Already a team name
   if (CONF[slot]) return slot;
 
-  // Winner/Loser of a knockout match e.g. W97, L101
+  // Winner/Loser of a knockout match
   if (slot.startsWith('W') || slot.startsWith('L')) {
     const matchId = 'M' + slot.substring(1);
     const r = results[matchId];
     if (!r) return null;
-    if (slot.startsWith('W')) return r.winner || null;
-    if (slot.startsWith('L')) return r.loser  || null;
+    return slot.startsWith('W') ? r.winner : r.loser;
   }
 
   return null;
