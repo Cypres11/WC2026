@@ -260,31 +260,33 @@ const R32_FIXED = [
 ];
 
 // Round of 16 bracket (winners of R32 matches)
+// Official FIFA R16: W73vsW75, W74vsW77, W76vsW78, W79vsW80, W81vsW82, W83vsW84, W85vsW87, W86vsW88
 const R16_FIXED = [
   {id:"M89", home:"W74", away:"W77", date:"4 jul",  venue:"Philadelphia"},
   {id:"M90", home:"W73", away:"W75", date:"4 jul",  venue:"Houston"},
   {id:"M91", home:"W76", away:"W78", date:"5 jul",  venue:"New York"},
   {id:"M92", home:"W79", away:"W80", date:"5 jul",  venue:"Mexico City"},
-  {id:"M93", home:"W81", away:"W84", date:"6 jul",  venue:"Los Angeles"},
-  {id:"M94", home:"W82", away:"W83", date:"6 jul",  venue:"Atlanta"},
-  {id:"M95", home:"W85", away:"W88", date:"7 jul",  venue:"Dallas"},
-  {id:"M96", home:"W86", away:"W87", date:"7 jul",  venue:"Seattle"},
+  {id:"M93", home:"W83", away:"W84", date:"6 jul",  venue:"Dallas"},
+  {id:"M94", home:"W81", away:"W82", date:"6 jul",  venue:"Seattle"},
+  {id:"M95", home:"W86", away:"W88", date:"7 jul",  venue:"Atlanta"},
+  {id:"M96", home:"W85", away:"W87", date:"7 jul",  venue:"Vancouver"},
 ];
 
+// Official FIFA QF: M97=W89vsW90, M98=W93vsW94, M99=W91vsW92, M100=W95vsW96
 const QF_FIXED = [
-  {id:"M97", home:"W89", away:"W90", date:"9 jul",  venue:"New York"},
-  {id:"M98", home:"W91", away:"W92", date:"9 jul",  venue:"Los Angeles"},
-  {id:"M99", home:"W93", away:"W95", date:"10 jul", venue:"Houston"},
-  {id:"M100",home:"W94", away:"W96", date:"11 jul", venue:"Miami"},
+  {id:"M97",  home:"W89", away:"W90", date:"9 jul",  venue:"Boston"},
+  {id:"M98",  home:"W93", away:"W94", date:"9 jul",  venue:"Los Angeles"},
+  {id:"M99",  home:"W91", away:"W92", date:"10 jul", venue:"Miami"},
+  {id:"M100", home:"W95", away:"W96", date:"10 jul", venue:"Kansas City"},
 ];
 
 const SF_FIXED = [
-  {id:"M101",home:"W97",  away:"W98",  date:"14 jul", venue:"Dallas"},
-  {id:"M102",home:"W99",  away:"W100", date:"15 jul", venue:"New York"},
+  {id:"M101", home:"W97",  away:"W98",  date:"14 jul", venue:"Dallas"},
+  {id:"M102", home:"W99",  away:"W100", date:"15 jul", venue:"Atlanta"},
 ];
 
 const TP_FIXED = [
-  {id:"M103",home:"L101", away:"L102", date:"18 jul", venue:"Miami"},
+  {id:"M103",home:"L101", away:"L102", date:"18 jul", venue:"Miami · Hard Rock Stadium"},
 ];
 
 const FI_FIXED = [
@@ -362,6 +364,14 @@ function getGroupStandings(grp) {
   });
 }
 
+// ── Helper: readable slot label ──────────────────────────────────────────
+function _slotLabel(slot) {
+  if (!slot || typeof slot !== 'string') return '?';
+  if (slot.startsWith('W')) return 'Winnaar M' + slot.substring(1);
+  if (slot.startsWith('L')) return 'Verliezer M' + slot.substring(1);
+  return slot;
+}
+
 // ── Render bracket ────────────────────────────────────────────────────────
 function renderBracket() {
   const rounds = [
@@ -406,15 +416,8 @@ function renderMatch(m, isFinal=false) {
   const homeTeam = r.home || resolveSlot(m.home);
   const awayTeam = r.away || resolveSlot(m.away);
   // Safely map slot to readable label
-  function slotLabel(slot) {
-    if (!slot) return '?';
-    if (typeof slot !== 'string') return '?';
-    if (slot.startsWith('W')) return 'Winnaar M' + slot.substring(1);
-    if (slot.startsWith('L')) return 'Verliezer M' + slot.substring(1);
-    return slot;
-  }
-  const homeLabel = homeTeam || slotLabel(m.home);
-  const awayLabel = awayTeam || slotLabel(m.away);
+  const homeLabel = homeTeam || _slotLabel(m.home);
+  const awayLabel = awayTeam || _slotLabel(m.away);
   const homeConf = getConf(homeTeam);
   const awayConf = getConf(awayTeam);
   const hasResult = r.home90 !== undefined && r.home90 !== null;
@@ -451,15 +454,8 @@ function openModal(matchId) {
   const homeTeam = r.home || resolveSlot(m.home);
   const awayTeam = r.away || resolveSlot(m.away);
   // Safely map slot to readable label
-  function slotLabel(slot) {
-    if (!slot) return '?';
-    if (typeof slot !== 'string') return '?';
-    if (slot.startsWith('W')) return 'Winnaar M' + slot.substring(1);
-    if (slot.startsWith('L')) return 'Verliezer M' + slot.substring(1);
-    return slot;
-  }
-  const homeLabel = homeTeam || slotLabel(m.home);
-  const awayLabel = awayTeam || slotLabel(m.away);
+  const homeLabel = homeTeam || _slotLabel(m.home);
+  const awayLabel = awayTeam || _slotLabel(m.away);
 
   document.getElementById('modalTitle').textContent = `${matchId} · ${m.date} · ${m.venue}`;
   // Show both team names in modal
@@ -493,15 +489,8 @@ async function saveMatch() {
   const homeTeam = r.home || resolveSlot(m.home);
   const awayTeam = r.away || resolveSlot(m.away);
   // Safely map slot to readable label
-  function slotLabel(slot) {
-    if (!slot) return '?';
-    if (typeof slot !== 'string') return '?';
-    if (slot.startsWith('W')) return 'Winnaar M' + slot.substring(1);
-    if (slot.startsWith('L')) return 'Verliezer M' + slot.substring(1);
-    return slot;
-  }
-  const homeLabel = homeTeam || slotLabel(m.home);
-  const awayLabel = awayTeam || slotLabel(m.away);
+  const homeLabel = homeTeam || _slotLabel(m.home);
+  const awayLabel = awayTeam || _slotLabel(m.away);
 
   const home90  = document.getElementById('inHome90').value.trim();
   const away90  = document.getElementById('inAway90').value.trim();
