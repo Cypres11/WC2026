@@ -370,15 +370,13 @@ function renderBracket() {
   // M98 voedt uit M93/M94 (rechts), M100 voedt uit M95/M96 (rechts)
   const leftQF   = [QF_FIXED[0], QF_FIXED[2]];  // M97, M99
   const rightQF  = [QF_FIXED[1], QF_FIXED[3]];  // M98, M100
-  const leftSF   = [SF_FIXED[0]];
-  const rightSF  = [SF_FIXED[1]];
-
+  // SF kruist links/rechts (M101=W97vW98, M102=W99vW100) -- daarom in het midden
+  
   const leftSide = `
     <div class="bracket-side left">
       ${renderRound('Round of 32', leftR32)}
       ${renderRound('Round of 16', leftR16)}
       ${renderRound('Kwartfinale', leftQF)}
-      ${renderRound('Halve Finale', leftSF)}
     </div>`;
 
   const rightSide = `
@@ -386,7 +384,6 @@ function renderBracket() {
       ${renderRound('Round of 32', rightR32)}
       ${renderRound('Round of 16', rightR16)}
       ${renderRound('Kwartfinale', rightQF)}
-      ${renderRound('Halve Finale', rightSF)}
     </div>`;
 
   const champion = resolveSlot('W104') || (() => {
@@ -396,6 +393,11 @@ function renderBracket() {
 
   const center = `
     <div class="bracket-center">
+      <div class="round-label" style="border:none;margin:0;padding:0">Halve Finale</div>
+      <div style="display:flex;gap:10px">
+        ${renderMatch(SF_FIXED[0])}
+        ${renderMatch(SF_FIXED[1])}
+      </div>
       <div class="trophy-box">
         <div class="trophy-icon">🏆</div>
         <div class="trophy-title">FIFA World Cup</div>
