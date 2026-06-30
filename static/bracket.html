@@ -366,8 +366,10 @@ function renderBracket() {
   const rightR32 = R32_FIXED.slice(8, 16);
   const leftR16  = R16_FIXED.slice(0, 4);
   const rightR16 = R16_FIXED.slice(4, 8);
-  const leftQF   = QF_FIXED.slice(0, 2);
-  const rightQF  = QF_FIXED.slice(2, 4);
+  // M97 voedt uit M89/M90 (links), M99 voedt uit M91/M92 (links)
+  // M98 voedt uit M93/M94 (rechts), M100 voedt uit M95/M96 (rechts)
+  const leftQF   = [QF_FIXED[0], QF_FIXED[2]];  // M97, M99
+  const rightQF  = [QF_FIXED[1], QF_FIXED[3]];  // M98, M100
   const leftSF   = [SF_FIXED[0]];
   const rightSF  = [SF_FIXED[1]];
 
