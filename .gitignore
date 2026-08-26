@@ -1,7 +1,13 @@
-__pycache__/
-*.pyc
-.env
-.anthropic_key
-venv/
-*.egg-info/
-.DS_Store
+total 96
+drwxr-xr-x  11 rfbroos  staff    352 26 aug. 17:19 .
+-rw-r--r--   1 rfbroos  staff      0 26 aug. 17:19 content.txt
+drwx------  11 rfbroos  staff    352 26 aug. 17:13 ..
+drwxr-xr-x  12 rfbroos  staff    384 26 aug. 17:13 .git
+drwxr-xr-x   4 rfbroos  staff    128 26 aug. 17:13 static
+-rw-r--r--   1 rfbroos  staff     75 26 aug. 17:13 requirements.txt
+-rw-r--r--   1 rfbroos  staff    284 26 aug. 17:13 railway.json
+-rw-r--r--   1 rfbroos  staff  28083 26 aug. 17:13 app.py
+-rw-r--r--   1 rfbroos  staff    666 26 aug. 17:13 README.md
+-rw-r--r--   1 rfbroos  staff     68 26 aug. 17:13 Procfile
+-rw-r--r--   1 rfbroos  staff     67 26 aug. 17:13 .gitignore
+content.txt
